@@ -17,6 +17,7 @@ const listSchema = new mongoose.Schema(
       type: String,
     },
     isAccepted: { type: Boolean },
+    visibility: { type: String, enum: ['Only Me', 'For All'], default: 'For All' },
     user: { type: mongoose.SchemaTypes.ObjectId, ref: 'User' },
   },
   {

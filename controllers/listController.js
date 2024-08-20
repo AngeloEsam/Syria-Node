@@ -10,7 +10,7 @@ const getAllLists = async (req, res) => {
       const page = req.query.page * 1 || 1;
     const limit = req.query.limit * 1 || 8;
     const skip = (page - 1) * limit;
-    let lists = await listModel.find().skip(skip).limit(limit).sort({ createdAt: -1 }).populate('user');
+    let lists = await listModel.find({visibility:"For All"}).skip(skip).limit(limit).sort({ createdAt: -1 }).populate('user');
     res.status(201).json({
       message: 'Successfully fetched all the lists',
       data: lists,
@@ -236,7 +236,7 @@ const addNewList = async (req, res) => {
     const selfImg = files['selfImg'] ? files['selfImg'][0].filename : null;
     const video = files['video'] ? files['video'][0].filename : null;
 
-    const { externalLinks, content, governorate, name, category, isAccepted } =
+    const { externalLinks, content, governorate, name, category, isAccepted ,visibility} =
       req.body;
     const user = await userModel.findById(userId);
     const addNewList = await listModel.create({
@@ -252,6 +252,7 @@ const addNewList = async (req, res) => {
       selfImg,
       video,
       documents,
+      visibility,
       user: userId,
     });
   
@@ -326,6 +327,103 @@ const acceptDataList = async (req, res) => {
   }
 };
 
+
+//get lists for all
+const getListsForAll = async (req, res) => {
+  try {
+
+    const lists = await listModel.find().sort({ createdAt: -1 }).populate('user');
+
+    res.status(200).json({ data: lists });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// get lists for me
+
+const getListsForMe = async (req, res) => {
+  try {
+    const  id  = req.id;
+
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const lists = await listModel.find({ visibility: 'Only Me', user: id });
+
+    res.status(200).json({ data: lists });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+const toggleVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+   
+    const list = await listModel.findById(id);
+
+    if (!list) {
+      return res.status(404).json({ error: 'No list found with this ID' });
+    }
+
+    
+    const newVisibility = list.visibility === 'Only Me' ? 'For All' : 'Only Me';
+
+  
+    list.visibility = newVisibility;
+    await list.save();
+
+    res.status(200).json({ message: 'Visibility updated successfully', visibility: list.visibility });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const updateVisibility = async (req, res) => {
+  try {
+    const { postId } = req.params; 
+    const { visibility } = req.body; 
+
+    
+    const updatedPost = await listModel.findByIdAndUpdate(
+      postId,
+      { visibility }, 
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.status(200).json({ message: 'Visibility updated successfully', data: updatedPost });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+//save data and only admin or superviser can see it (in dashboard)
+const getDashboardData = async (req, res) => {
+  try {
+  
+    const { role } = req; 
+
+    if (role !== 'admin' && role !== 'supervisor') {
+      return res.status(403).json({ error: 'Access denied' }); 
+    }
+
+    
+    const data = await listModel.find();
+
+    res.status(200).json({ data });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 module.exports = {
   getAllLists,
   deleteList,
@@ -336,5 +434,10 @@ module.exports = {
   acceptDataList,
   getAllListsUserView,
   searchByCategoryFalse,
-  searchByName
+  searchByName,
+  getListsForAll,
+  getListsForMe,
+  toggleVisibility,
+  updateVisibility,
+  getDashboardData
 };

@@ -12,7 +12,12 @@ const {
   acceptDataList,
   getAllListsUserView,
   searchByCategoryFalse,
-  searchByName
+  searchByName,
+  getListsForAll,
+  getListsForMe,
+  toggleVisibility,
+  updateVisibility,
+  getDashboardData
 } = require('../controllers/listController');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -58,4 +63,12 @@ router.patch(
   ]),
   updateList
 );
+
+//get lists for all
+router.get('/getLists/forAll',auth, getListsForAll);
+//get lists for me 
+router.get('/getLists/forMe',auth, getListsForMe);
+router.put('/toggle-visibility/:id', auth, toggleVisibility);
+router.put('/updateVisibility/:postId', auth, updateVisibility);
+router.get('/dashboardData', auth, getDashboardData);
 module.exports = router;
