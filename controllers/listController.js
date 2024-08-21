@@ -1,18 +1,23 @@
-const listModel = require('../models/listModel');
-const userModel = require('../models/userModel');
-const sgelModel = require('../models/seglModel');
-const notificationModel = require('../models/notificationModel');
+const listModel = require("../models/listModel");
+const userModel = require("../models/userModel");
+const sgelModel = require("../models/seglModel");
+const notificationModel = require("../models/notificationModel");
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const getAllLists = async (req, res) => {
   try {
-      const page = req.query.page * 1 || 1;
+    const page = req.query.page * 1 || 1;
     const limit = req.query.limit * 1 || 8;
     const skip = (page - 1) * limit;
-    let lists = await listModel.find({visibility:"For All"}).skip(skip).limit(limit).sort({ createdAt: -1 }).populate('user');
+    let lists = await listModel
+      .find({ visibility: "For All" })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .populate("user");
     res.status(201).json({
-      message: 'Successfully fetched all the lists',
+      message: "Successfully fetched all the lists",
       data: lists,
     });
   } catch (err) {
@@ -21,14 +26,17 @@ const getAllLists = async (req, res) => {
 };
 const getAllListsUserView = async (req, res) => {
   try {
-      const page = req.query.page * 1 || 1;
+    const page = req.query.page * 1 || 1;
     const limit = req.query.limit * 1 || 8;
     const skip = (page - 1) * limit;
     let lists = await listModel
-      .find({ isAccepted: true }).skip(skip).limit(limit)
-      .sort({ createdAt: -1 }).populate('user');
+      .find({ isAccepted: true })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .populate("user");
     res.status(201).json({
-      message: 'Successfully fetched all the lists',
+      message: "Successfully fetched all the lists",
       data: lists,
     });
   } catch (err) {
@@ -40,17 +48,17 @@ const deleteList = async (req, res) => {
   try {
     const data = await listModel.findByIdAndDelete(id);
     if (!data) {
-      return res.status(404).json('Id Not Found');
+      return res.status(404).json("Id Not Found");
     }
     const user = await userModel.findById(userId);
-        if (user.role !== 'owner') {
+    if (user.role !== "owner") {
       const sgelData = await sgelModel.create({
         type: `delete list data post`,
         user: user,
         data: data,
       });
     }
-    res.status(200).json('list Deleted Successfully');
+    res.status(200).json("list Deleted Successfully");
   } catch (error) {
     return res.status(500).json(error.message);
   }
@@ -58,10 +66,10 @@ const deleteList = async (req, res) => {
 const getSingleList = async (req, res) => {
   try {
     const { id } = req.params;
-    const singleMassacres = await listModel.findById(id).populate('user');
+    const singleMassacres = await listModel.findById(id).populate("user");
     res.json(singleMassacres);
   } catch (error) {
-    res.status(400).json({ error: 'Error in Fetching Data' });
+    res.status(400).json({ error: "Error in Fetching Data" });
   }
 };
 const searchByCategory = async (req, res) => {
@@ -77,7 +85,8 @@ const searchByCategory = async (req, res) => {
       })
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 }).populate('user');
+      .sort({ createdAt: -1 })
+      .populate("user");
     res.json(found);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -88,15 +97,14 @@ const searchByName = async (req, res) => {
   try {
     const { name } = req.query;
     const found = await listModel
-      .find({ name: { $regex: name, $options: 'i' }, isAccepted: true })
-      .sort({ createdAt: -1 }).populate('user');
+      .find({ name: { $regex: name, $options: "i" }, isAccepted: true })
+      .sort({ createdAt: -1 })
+      .populate("user");
     res.json(found);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 const searchByCategoryFalse = async (req, res) => {
   try {
@@ -111,110 +119,74 @@ const searchByCategoryFalse = async (req, res) => {
       })
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 }).populate('user');
+      .sort({ createdAt: -1 })
+      .populate("user");
     res.json(found);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-// const updateList = async (req, res) => {
-//   try {
-//     const { id, userId } = req.params;
-//     const { name, content, governorate, externalLinks } = req.body;
-//     let selfImg = '';
-//     let video = '';
-//     if (req.file !== undefined) {
-//       selfImg = req.file.filename;
-//     } else {
-//       const existingUser = await listModel.findById(id);
-//       if (existingUser) {
-//         selfImg = existingUser.selfImg;
-//       }
-//     }
-   
-//     if (req.file !== undefined) {
-//       video = req.file.filename;
-//     } else {
-//       const existingUser = await listModel.findById(id);
-//       if (existingUser) {
-//         video = existingUser.video;
-//       }
-//     }
 
-//     const updateList = await listModel.findByIdAndUpdate(
-//       id,
-//       {
-//         selfImg,
-//         video,
-//         content,
-//         governorate,
-//         name,
-//         externalLinks,
-//       },
-//       { new: true }
-//     );
 
-//     if (!updateList) {
-//       res.status(404).json('No list with this Id found.');
-//     }
-//     const user = await userModel.findById(userId);
-//        if (user.role !== 'owner') {
-//       const sgelData = await sgelModel.create({
-//         type: `updata list data post`,
-//         user: user,
-//         data: updateList,
-//       });
-//     }
-//     res.status(200).json({ data: updateList });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
+
 
 const updateList = async (req, res) => {
   try {
     const { id, userId } = req.params;
     const { name, content, governorate, externalLinks } = req.body;
-    
+    const imageDescriptions = req.body.imageDescriptions ? JSON.parse(req.body.imageDescriptions) : [];
+
     let updateData = {};
+    let updatedImages = [];
 
-    // التحقق من وجود selfImg في الملفات المرفوعة
-    if (req.files && req.files['selfImg']) {
-      updateData.selfImg = req.files['selfImg'][0].filename;
-    } else {
-      const existingList = await listModel.findById(id);
-      if (existingList) {
-        updateData.selfImg = existingList.selfImg;
+    // Handle file updates
+    if (req.files) {
+      if (req.files['images']) {
+        const existingList = await listModel.findById(id);
+        if (!existingList) {
+          return res.status(404).json("No list with this Id found.");
+        }
+
+        // Update images with new files and descriptions
+        updatedImages = req.files['images'].map((file, index) => ({
+          imgPath: file.filename,
+          description: imageDescriptions[index] || "", 
+        }));
+
+        // Merge updated images with existing images
+        updateData.images = existingList.images.map((img, idx) => {
+          const updatedImg = updatedImages.find(updated => updated.imgPath === img.imgPath);
+          if (updatedImg) {
+            return { ...img, description: updatedImg.description };
+          }
+          return img;
+        });
+      }
+
+      if (req.files['video']) {
+        updateData.video = req.files['video'][0].filename;
       }
     }
 
-    // التحقق من وجود video في الملفات المرفوعة
-    if (req.files && req.files['video']) {
-      updateData.video = req.files['video'][0].filename;
-    } else {
-      const existingList = await listModel.findById(id);
-      if (existingList) {
-        updateData.video = existingList.video;
-      }
-    }
-
-    // تحديث الحقول الأخرى في حالة وجودها
+    // Update text fields
     if (name) updateData.name = name;
     if (content) updateData.content = content;
     if (governorate) updateData.governorate = governorate;
     if (externalLinks) updateData.externalLinks = externalLinks;
 
-    const updatedList = await listModel.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedList = await listModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    }).populate('images');
 
     if (!updatedList) {
-      return res.status(404).json('No list with this Id found.');
+      return res.status(404).json("No list with this Id found.");
     }
 
     const user = await userModel.findById(userId);
 
-    if (user.role !== 'owner') {
+    if (user.role !== "owner") {
       await sgelModel.create({
-        type: 'update list data post',
+        type: "update list data post",
         user: user,
         data: updatedList,
       });
@@ -225,20 +197,40 @@ const updateList = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
 const addNewList = async (req, res) => {
   try {
     const { userId } = req.params;
     let files = req.files;
     let documents = [];
-    if (files['documents'] != undefined) {
-      documents = files['documents'].map((file) => file.filename);
-    }
-    const selfImg = files['selfImg'] ? files['selfImg'][0].filename : null;
-    const video = files['video'] ? files['video'][0].filename : null;
+    let images = [];
 
-    const { externalLinks, content, governorate, name, category, isAccepted ,visibility} =
-      req.body;
+    if (files["documents"]) {
+      documents = files["documents"].map((file) => file.filename);
+    }
+
+    if (files["images"] && Array.isArray(req.body.imageDescriptions)) {
+      images = files["images"].map((file, index) => ({
+        imgPath: file.filename,
+        description: req.body.imageDescriptions[index] || "",
+      }));
+    }
+
+    const video = files["video"] ? files["video"][0].filename : null;
+
+    const {
+      externalLinks,
+      content,
+      governorate,
+      name,
+      category,
+      isAccepted,
+      visibility,
+    } = req.body;
     const user = await userModel.findById(userId);
+
     const addNewList = await listModel.create({
       externalLinks,
       content,
@@ -246,45 +238,44 @@ const addNewList = async (req, res) => {
       name,
       category,
       isAccepted:
-        user.role === 'admin' ||
-        user.role === 'supervisor' ||
-        user.role === 'owner',
-      selfImg,
+        user.role === "admin" ||
+        user.role === "supervisor" ||
+        user.role === "owner",
+      images,
       video,
       documents,
       visibility,
       user: userId,
     });
-  
+
     if (!addNewList) {
-      return res.status(400).json({ error: 'Failed to add the list' });
+      return res.status(400).json({ error: "Failed to add the list" });
     }
+
     const updateData = await userModel
       .findByIdAndUpdate(
         userId,
         { lists: [...user.lists, addNewList] },
         { new: true }
       )
-      .populate('lists');
-     if (user.role !== 'owner') {
-
-        if (user.role !== 'owner') {
-      const sgelData = await sgelModel.create({
-        type: `add list data post`,
-        user: user,
-        data: addNewList,
-      });
+      .populate("lists");
+    if (user.role !== "owner") {
+      if (user.role !== "owner") {
+        const sgelData = await sgelModel.create({
+          type: `add list data post`,
+          user: user,
+          data: addNewList,
+        });
+      }
+      if (addNewList.isAccepted == true) {
+        const notificationData = await notificationModel.create({
+          type: `add list data post`,
+          user: user,
+          data: addNewList,
+        });
+      }
+      res.status(200).json(updateData);
     }
-    if (addNewList.isAccepted == true) {
-      const notificationData = await notificationModel.create({
-        type: `add list data post`,
-        user: user,
-        data: addNewList,
-      });
-    }
-    res.status(200).json(updateData);
-  }
-      
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -298,16 +289,16 @@ const acceptDataList = async (req, res) => {
       listId,
       {
         isAccepted: true,
-        notification: 'تم قبول منشورك بنجاح',
+        notification: "تم قبول منشورك بنجاح",
       },
       { new: true }
     );
 
     if (!acceptedList) {
-      return res.status(400).json({ error: 'Failed to update the data' });
+      return res.status(400).json({ error: "Failed to update the data" });
     }
     const user = await userModel.findById(userId);
-       if (user.role !== 'owner') {
+    if (user.role !== "owner") {
       const sgelData = await sgelModel.create({
         type: `accept list data post`,
         user: user,
@@ -321,18 +312,19 @@ const acceptDataList = async (req, res) => {
     });
     res
       .status(200)
-      .json({ success: 'data updated successfully', data: acceptedList });
+      .json({ success: "data updated successfully", data: acceptedList });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-
 //get lists for all
 const getListsForAll = async (req, res) => {
   try {
-
-    const lists = await listModel.find().sort({ createdAt: -1 }).populate('user');
+    const lists = await listModel
+      .find()
+      .sort({ createdAt: -1 })
+      .populate("user");
 
     res.status(200).json({ data: lists });
   } catch (error) {
@@ -344,14 +336,14 @@ const getListsForAll = async (req, res) => {
 
 const getListsForMe = async (req, res) => {
   try {
-    const  id  = req.id;
+    const id = req.id;
 
     const user = await userModel.findById(id);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const lists = await listModel.find({ visibility: 'Only Me', user: id });
+    const lists = await listModel.find({ visibility: "Only Me", user: id });
 
     res.status(200).json({ data: lists });
   } catch (error) {
@@ -359,26 +351,27 @@ const getListsForMe = async (req, res) => {
   }
 };
 
-
 const toggleVisibility = async (req, res) => {
   try {
     const { id } = req.params;
 
-   
     const list = await listModel.findById(id);
 
     if (!list) {
-      return res.status(404).json({ error: 'No list found with this ID' });
+      return res.status(404).json({ error: "No list found with this ID" });
     }
 
-    
-    const newVisibility = list.visibility === 'Only Me' ? 'For All' : 'Only Me';
+    const newVisibility = list.visibility === "Only Me" ? "For All" : "Only Me";
 
-  
     list.visibility = newVisibility;
     await list.save();
 
-    res.status(200).json({ message: 'Visibility updated successfully', visibility: list.visibility });
+    res
+      .status(200)
+      .json({
+        message: "Visibility updated successfully",
+        visibility: list.visibility,
+      });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -386,21 +379,22 @@ const toggleVisibility = async (req, res) => {
 
 const updateVisibility = async (req, res) => {
   try {
-    const { postId } = req.params; 
-    const { visibility } = req.body; 
+    const { postId } = req.params;
+    const { visibility } = req.body;
 
-    
     const updatedPost = await listModel.findByIdAndUpdate(
       postId,
-      { visibility }, 
+      { visibility },
       { new: true }
     );
 
     if (!updatedPost) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ error: "Post not found" });
     }
 
-    res.status(200).json({ message: 'Visibility updated successfully', data: updatedPost });
+    res
+      .status(200)
+      .json({ message: "Visibility updated successfully", data: updatedPost });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -409,15 +403,16 @@ const updateVisibility = async (req, res) => {
 //save data and only admin or superviser can see it (in dashboard)
 const getDashboardData = async (req, res) => {
   try {
-  
-    const { role } = req; 
+    const { role } = req;
 
-    if (role !== 'admin' && role !== 'supervisor') {
-      return res.status(403).json({ error: 'Access denied' }); 
+    if (role !== "admin" && role !== "supervisor") {
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    
-    const data = await listModel.find();
+    const data = await listModel
+      .find()
+      .sort({ createdAt: -1 })
+      .populate("user");
 
     res.status(200).json({ data });
   } catch (error) {
@@ -439,5 +434,5 @@ module.exports = {
   getListsForMe,
   toggleVisibility,
   updateVisibility,
-  getDashboardData
+  getDashboardData,
 };

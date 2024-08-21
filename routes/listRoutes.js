@@ -46,7 +46,7 @@ router.post(
   auth,
   upload.fields([
     { name: 'documents', maxCount: 10 },
-    { name: 'selfImg', maxCount: 1 },
+    { name: 'images', maxCount: 10 },
     { name: 'video', maxCount: 1 }
   ]),
   addNewList
@@ -58,8 +58,9 @@ router.patch(
   auth,
   restrictTo('admin', 'supervisor', 'owner'),
   upload.fields([
-    { name: 'selfImg', maxCount: 1 },
-    { name: 'video', maxCount: 1 }
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+    { name: 'documents', maxCount: 10 }
   ]),
   updateList
 );
