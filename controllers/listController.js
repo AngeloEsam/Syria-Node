@@ -129,7 +129,6 @@ const searchByCategoryFalse = async (req, res) => {
 
 
 
-
 const updateList = async (req, res) => {
   try {
     const { id, userId } = req.params;
@@ -137,38 +136,21 @@ const updateList = async (req, res) => {
     const imageDescriptions = req.body.imageDescriptions ? JSON.parse(req.body.imageDescriptions) : [];
 
     let updateData = {};
-    let updatedImages = [];
 
-    // Handle file updates
-    if (req.files) {
-      if (req.files['images']) {
-        const existingList = await listModel.findById(id);
-        if (!existingList) {
-          return res.status(404).json("No list with this Id found.");
-        }
-
-        // Update images with new files and descriptions
-        updatedImages = req.files['images'].map((file, index) => ({
-          imgPath: file.filename,
-          description: imageDescriptions[index] || "", 
-        }));
-
-        // Merge updated images with existing images
-        updateData.images = existingList.images.map((img, idx) => {
-          const updatedImg = updatedImages.find(updated => updated.imgPath === img.imgPath);
-          if (updatedImg) {
-            return { ...img, description: updatedImg.description };
-          }
-          return img;
-        });
-      }
-
-      if (req.files['video']) {
-        updateData.video = req.files['video'][0].filename;
-      }
+    // تحديث الصور والوصف
+    if (req.files && req.files['images']) {
+      updateData.images = req.files['images'].map((file, index) => ({
+        imgPath: file.filename,
+        description: imageDescriptions[index] || "", 
+      }));
     }
 
-    // Update text fields
+    // تحديث الفيديو
+    if (req.files && req.files['video']) {
+      updateData.video = req.files['video'][0].filename;
+    }
+
+    // تحديث الحقول النصية
     if (name) updateData.name = name;
     if (content) updateData.content = content;
     if (governorate) updateData.governorate = governorate;
@@ -176,7 +158,7 @@ const updateList = async (req, res) => {
 
     const updatedList = await listModel.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).populate('images');
+    });
 
     if (!updatedList) {
       return res.status(404).json("No list with this Id found.");
@@ -198,8 +180,6 @@ const updateList = async (req, res) => {
   }
 };
 
-
-
 const addNewList = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -207,16 +187,29 @@ const addNewList = async (req, res) => {
     let documents = [];
     let images = [];
 
-    if (files["documents"]) {
-      documents = files["documents"].map((file) => file.filename);
-    }
+    // if (files["documents"]) {
+    //   documents = files["documents"].map((file) => file.filename);
+    // }
 
-    if (files["images"] && Array.isArray(req.body.imageDescriptions)) {
-      images = files["images"].map((file, index) => ({
-        imgPath: file.filename,
-        description: req.body.imageDescriptions[index] || "",
-      }));
-    }
+    // if (files["images"] && Array.isArray(req.body.imageDescriptions)) {
+    //   images = files["images"].map((file, index) => ({
+    //     imgPath: file.filename,
+    //     description: req.body.imageDescriptions[index] || "",
+    //   }));
+    // }
+
+       // Handle images and descriptions
+       if (files["images"]) {
+        // Check if imageDescriptions is an array or a single string
+        const descriptions = Array.isArray(req.body.imageDescriptions)
+          ? req.body.imageDescriptions
+          : [req.body.imageDescriptions];
+  
+        images = files["images"].map((file, index) => ({
+          imgPath: file.filename,
+          description: descriptions[index] || "",
+        }));
+      }
 
     const video = files["video"] ? files["video"][0].filename : null;
 
@@ -274,7 +267,7 @@ const addNewList = async (req, res) => {
           data: addNewList,
         });
       }
-      res.status(200).json(updateData);
+      res.status(200).json(addNewList);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });

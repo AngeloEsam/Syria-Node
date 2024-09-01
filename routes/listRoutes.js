@@ -56,11 +56,11 @@ router.get('/:id', getSingleList);
 router.patch(
   '/:id/:userId',
   auth,
-  restrictTo('admin', 'supervisor', 'owner'),
+  //restrictTo('admin', 'supervisor', 'owner'),
   upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'video', maxCount: 1 },
-    { name: 'documents', maxCount: 10 }
+    //{ name: 'documents', maxCount: 10 }
   ]),
   updateList
 );
