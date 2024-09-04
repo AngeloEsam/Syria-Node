@@ -10,7 +10,7 @@ const getAllUsers = async (req, res) => {
     const skip = (page - 1) * limit;
     const users = await userModel
       .find({ role: 'user' }).skip(skip).limit(limit)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 }).populate("saveLists")
     res.status(201).json({
       message: 'Successfully fetched all the users',
       data: users,
@@ -25,7 +25,7 @@ const getAllUsersAndAdminAndSup = async (req, res) => {
     const limit = req.query.limit * 1 || 5;
     const skip = (page - 1) * limit;
     const users = await userModel
-      .find({}).skip(skip).limit(limit)
+      .find({}).populate("saveLists").skip(skip).limit(limit)
       .sort({ createdAt: -1 })
     res.status(201).json({
       message: 'Successfully fetched all the users',
@@ -41,7 +41,7 @@ const getAllUsersAndAdminAndSupWithoutSkip = async (req, res) => {
     const users = await userModel
       .find({})
       .sort({ createdAt: -1 })
-      .populate(['lists', 'massacres', 'child']);
+      .populate(['lists', 'massacres', 'child','saveLists']);
     console.log(users.data);
     res.status(201).json({
       message: 'Successfully fetched all the users',

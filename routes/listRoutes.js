@@ -17,7 +17,8 @@ const {
   getListsForMe,
   toggleVisibility,
   updateVisibility,
-  getDashboardData
+  getDashboardData,
+  saveList
 } = require('../controllers/listController');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -29,6 +30,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 const router = express.Router();
+router.post('/save-list',auth, saveList);
 router.patch(
   '/accept/:listId/:userId',
   auth,

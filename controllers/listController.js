@@ -412,6 +412,41 @@ const getDashboardData = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const saveList = async (req, res) => {
+  try {
+    const { userId, listId } = req.body;
+    console.log(userId)
+    console.log(listId)
+
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(listId)) {
+      return res.status(400).json({ message: 'Invalid userId or listId.' });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Only admins can save lists.' });
+    }
+
+
+    const list = await listModel.findById(listId);
+    if (!list) {
+      return res.status(404).json({ message: 'List not found.' });
+    }
+    console.log('List details:', list);
+
+    if (!user.saveLists.includes(list._id)) {
+      user.saveLists.push(list._id);
+      await user.save();
+    }
+
+    res.status(200).json({ message: 'List saved successfully.' });
+  } catch (error) {
+    console.error('Error occurred:', error);
+    res.status(500).json({ message: 'An error occurred.', error: error.message });
+  }
+};
+
 module.exports = {
   getAllLists,
   deleteList,
@@ -428,4 +463,5 @@ module.exports = {
   toggleVisibility,
   updateVisibility,
   getDashboardData,
+  saveList
 };

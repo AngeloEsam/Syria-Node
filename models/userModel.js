@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
     child: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'ChildData' }],
     massacres: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Massacres' }],
     lists: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'List' }],
+    saveLists: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'List' }],
   },
   {
     timestamps: true,
