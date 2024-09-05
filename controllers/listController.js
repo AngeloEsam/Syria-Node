@@ -186,18 +186,6 @@ const addNewList = async (req, res) => {
     let files = req.files;
     let documents = [];
     let images = [];
-
-    // if (files["documents"]) {
-    //   documents = files["documents"].map((file) => file.filename);
-    // }
-
-    // if (files["images"] && Array.isArray(req.body.imageDescriptions)) {
-    //   images = files["images"].map((file, index) => ({
-    //     imgPath: file.filename,
-    //     description: req.body.imageDescriptions[index] || "",
-    //   }));
-    // }
-
        // Handle images and descriptions
        if (files["images"]) {
         // Check if imageDescriptions is an array or a single string
@@ -447,6 +435,116 @@ const saveList = async (req, res) => {
   }
 };
 
+const addNewPost = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(userId)
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid userId format" });
+    }
+    let files = req.files;
+    let documents = [];
+    let images = [];
+    
+    // Handle images and descriptions
+    if (files["images"]) {
+      const descriptions = Array.isArray(req.body.imageDescriptions)
+        ? req.body.imageDescriptions
+        : [req.body.imageDescriptions];
+
+      images = files["images"].map((file, index) => ({
+        imgPath: file.filename,
+        description: descriptions[index] || "",
+      }));
+    }
+
+    const video = files["video"] ? files["video"][0].filename : null;
+
+    const {
+      externalLinks,
+      content,
+      governorate,
+      name,
+      category,
+      isAccepted,
+      visibility,
+    } = req.body;
+    const user = await userModel.findById(userId);
+    console.log(user)
+    const newPost = await listModel.create({
+      externalLinks,
+      content,
+      governorate,
+      name,
+      category,
+      isAccepted: user.role === "admin" || user.role === "supervisor" || user.role === "owner",
+      images,
+      video,
+      documents,
+      visibility,
+      user: userId,
+    });
+
+    if (!newPost) {
+      return res.status(400).json({ error: "Failed to add the post" });
+    }
+    console.log(user.role)
+    if (user.role === "admin" || user.role==="user"|| user.role==="owner"|| user.role==="supervisor") {
+      await userModel.findByIdAndUpdate(
+        userId,
+        { $push: { saveLists: newPost._id } },
+        { new: true }
+      );
+    }
+
+    res.status(200).json(newPost);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const publishPost = async (req, res) => {
+  try {
+    const { userId, postId } = req.params;
+    const user = await userModel.findById(userId);
+
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "You do not have permission to publish posts" });
+    }
+
+    // Check if the post is in saveLists
+    const postInSaveLists = user.saveLists.includes(postId);
+    if (!postInSaveLists) {
+      return res.status(404).json({ error: "Post not found in saveLists" });
+    }
+
+    // Remove post from saveLists and add it to lists
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { 
+        $pull: { saveLists: postId },
+        $push: { lists: postId }
+      },
+      { new: true }
+    );
+
+    const updatedPost = await listModel.findByIdAndUpdate(
+      postId,
+      { isAccepted: true },
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.status(200).json(updatedPost);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 module.exports = {
   getAllLists,
   deleteList,
@@ -463,5 +561,7 @@ module.exports = {
   toggleVisibility,
   updateVisibility,
   getDashboardData,
-  saveList
+  saveList,
+  addNewPost,
+  publishPost
 };
